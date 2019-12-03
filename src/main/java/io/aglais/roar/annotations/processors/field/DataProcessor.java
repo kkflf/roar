@@ -7,17 +7,19 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class DataProcessor implements AvroProcessor<RoarData> {
+public class DataProcessor extends AbstractAvroProcessor<RoarData> {
 
     private RoarData roarDate;
     private Field field;
     private List<String> allFieldNamesOrdered;
+    private Map<String, Object> configProperties;
 
     @Override
-    public void initialize(RoarData annotation, Field field, List<String> allFieldNamesOrdered) {
+    public void initialize(RoarData annotation, Field field, List<String> allFieldNamesOrdered, Map<String, Object> configProperties) {
         this.roarDate = annotation;
         this.field = field;
         this.allFieldNamesOrdered = allFieldNamesOrdered;
+        this.configProperties = configProperties;
     }
 
     @Override
@@ -36,11 +38,21 @@ public class DataProcessor implements AvroProcessor<RoarData> {
         return new HashMap<>();
     }
 
+    @Override
+    public List<String> getAllFieldNamesOrdered() {
+        return allFieldNamesOrdered;
+    }
+
     public void setExtraAnnotations(){
 //        if(roarDate.using() == FactoryEncoder.class){
 //            TypeRuntimeAnnotations
 //            field.set();
 //        }
+    }
+
+    @Override
+    public Map<String, Object> getConfigProperties() {
+        return configProperties;
     }
 
 }

@@ -27,12 +27,20 @@ public class RoarReflectData extends ReflectData {
 
         SchemaProcessor schemaProcessor = roarSchema.processor().newInstance();
 
-        schemaProcessor.initialize(schema, clazz, Collections.emptyMap());
+        schemaProcessor.initialize(schema, clazz, getConfigProperties());
 
         schemaProcessor.postProcessor();
 
         return schema;
     }
 
+    private Map<String, Object> getConfigProperties(){
+
+        Map<String, Object> map = new HashMap<>();
+
+        map.put("field-delimiter", "-");
+
+        return map;
+    }
 
 }

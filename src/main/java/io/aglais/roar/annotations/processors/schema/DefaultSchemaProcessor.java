@@ -58,9 +58,9 @@ public class DefaultSchemaProcessor extends AbstractSchemaProcessor {
 
                     parentFieldName.add(field.getName());
 
-                    avroProcessor.initialize(annotation, field, parentFieldName);
+                    avroProcessor.initialize(annotation, field, parentFieldName, configProperties);
 
-                    System.out.println("Field name: " + String.join(".", parentFieldName));
+                    System.out.println(avroProcessor.getFullFieldName());
 
                     Map<String, Object> propMap = avroProcessor.getFieldProperties();
 

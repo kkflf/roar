@@ -7,9 +7,17 @@ import java.util.Map;
 
 public interface AvroProcessor<A extends Annotation> {
 
-    void initialize(A annotation, Field field, List<String> allFieldNamesOrdered);
+    void initialize(A annotation, Field field, List<String> allFieldNamesOrdered, Map<String, Object> configProperties);
 
     Map<String, Object> getFieldProperties();
 
     Map<String, Object> getSchemaProperties();
+
+    List<String> getAllFieldNamesOrdered();
+
+    void setExtraAnnotations();
+
+    Map<String, Object> getConfigProperties();
+
+    String getFullFieldName();
 }
