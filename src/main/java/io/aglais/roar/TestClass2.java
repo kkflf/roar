@@ -16,7 +16,7 @@ public class TestClass2 {
 
 
 
-    @RoarData(documentation = "This is a value")
+    @RoarData(documentation = "This is a value - testClass2ValueValue")
     String testClass2ValueValue;
 
 }
