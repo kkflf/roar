@@ -13,7 +13,6 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.time.ZonedDateTime;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Properties;
 
@@ -47,9 +46,14 @@ public class RoarDevelopmentTests {
                 .eventId("event-id-123")
                 .build();
 
+        TestClass2 testClass2 = TestClass2.builder()
+                .testClass2ValueValue("asd")
+                .build();
+
         SubTestClass subTestClass = SubTestClass
                 .builder()
-                .value(12)
+                .valueFieldField(12)
+                .testClass2Value(testClass2)
                 .build();
 
         TestClass testClass = TestClass

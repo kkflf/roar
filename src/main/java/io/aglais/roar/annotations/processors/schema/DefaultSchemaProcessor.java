@@ -6,6 +6,8 @@ import org.apache.avro.Schema;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 public class DefaultSchemaProcessor extends AbstractSchemaProcessor {
@@ -29,20 +31,23 @@ public class DefaultSchemaProcessor extends AbstractSchemaProcessor {
     @Override
     public void postProcessor() {
         try {
-            postProcessSchema(schema, clazz);
+            postProcessSchema(schema, clazz, new ArrayList<>());
         } catch (IllegalAccessException | InstantiationException | ClassNotFoundException e) {
             throw new RuntimeException(e);
         }
     }
 
-    private void postProcessSchema(Schema schema, Class clazz) throws IllegalAccessException, InstantiationException, ClassNotFoundException {
+    private void postProcessSchema(Schema schema, Class clazz, List<String> parentFieldName) throws IllegalAccessException, InstantiationException, ClassNotFoundException {
         for (Schema.Field field : schema.getFields()) {
             if (isComplexType(field.schema().getFullName())) {
-                postProcessSchema(field.schema(), Class.forName(field.schema().getFullName()));
+                parentFieldName.add(field.name());
+                postProcessSchema(field.schema(), Class.forName(field.schema().getFullName()), parentFieldName);
             }
         }
 
+
         for (Field field : clazz.getDeclaredFields()) {
+
             for (Annotation annotation : field.getAnnotations()) {
 
                 RoarProcessor roarProcessor = annotation.annotationType().getAnnotation(RoarProcessor.class);
@@ -51,7 +56,11 @@ public class DefaultSchemaProcessor extends AbstractSchemaProcessor {
 
                     AvroProcessor avroProcessor = roarProcessor.value().newInstance();
 
-                    avroProcessor.initialize(annotation, field);
+                    parentFieldName.add(field.getName());
+
+                    avroProcessor.initialize(annotation, field, parentFieldName);
+
+                    System.out.println("Field name: " + String.join(".", parentFieldName));
 
                     Map<String, Object> propMap = avroProcessor.getFieldProperties();
 

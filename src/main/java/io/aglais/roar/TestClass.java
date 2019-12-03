@@ -29,6 +29,9 @@ public class TestClass extends RoarEvent {
 
     private SubTestClass subTestClass;
 
+    @RoarData(documentation = "This is a value")
+    private int valueFieldField;
+
     @RoarDate(timezone = "EET")
     @AvroEncode(using = DateFactoryEncoder.class)
     private ZonedDateTime date;

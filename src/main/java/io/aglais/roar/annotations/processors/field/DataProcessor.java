@@ -4,17 +4,20 @@ import io.aglais.roar.annotations.api.RoarData;
 
 import java.lang.reflect.Field;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class DataProcessor implements AvroProcessor<RoarData> {
 
     private RoarData roarDate;
     private Field field;
+    private List<String> allFieldNamesOrdered;
 
     @Override
-    public void initialize(RoarData annotation, Field field) {
+    public void initialize(RoarData annotation, Field field, List<String> allFieldNamesOrdered) {
         this.roarDate = annotation;
         this.field = field;
+        this.allFieldNamesOrdered = allFieldNamesOrdered;
     }
 
     @Override

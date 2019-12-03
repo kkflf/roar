@@ -14,6 +14,9 @@ import lombok.NoArgsConstructor;
 public class SubTestClass {
 
     @RoarData(documentation = "This is a value")
-    private int value;
+    private int valueFieldField;
+
+    @RoarData(documentation = "This is a value")
+    TestClass2 testClass2Value;
 
 }
