@@ -24,14 +24,7 @@ public class DateProcessor extends AbstractAvroProcessor<RoarDate> {
 
     @Override
     public Map<String, Object> getFieldProperties() {
-        Map<String, Object> map = new HashMap<>();
-
-        map.put("doc", roarData.documentation());
-
-
-        System.out.println("asdasd " + field.getName());
-
-        return map;
+        return getCommonFieldProperties();
     }
 
     @Override
@@ -54,5 +47,9 @@ public class DateProcessor extends AbstractAvroProcessor<RoarDate> {
         return configProperties;
     }
 
+    @Override
+    public String getDocumentation() {
+        return roarData.documentation();
+    }
 
 }

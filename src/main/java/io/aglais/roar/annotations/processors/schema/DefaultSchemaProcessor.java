@@ -1,21 +1,23 @@
 package io.aglais.roar.annotations.processors.schema;
 
+import io.aglais.roar.annotations.api.RoarGdpr;
 import io.aglais.roar.annotations.processors.field.AvroProcessor;
+import io.aglais.roar.annotations.processors.field.GdprProcessor;
 import io.aglais.roar.annotations.processors.field.RoarProcessor;
 import org.apache.avro.Schema;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.lang.reflect.InvocationTargetException;
+import java.util.*;
+import java.util.function.BiFunction;
 
 public class DefaultSchemaProcessor extends AbstractSchemaProcessor {
 
-    private Schema schema;
-    private Class<?> clazz;
-    private Map<String, Object> configProperties;
+
+    protected DefaultSchemaProcessor(Schema schema, Class<?> clazz, Map<String, Object> configProperties) {
+        super(schema, clazz, configProperties);
+    }
 
     public static Field getField(Class<?> type, String fieldName) throws NoSuchFieldException {
         List<Field> fields = new ArrayList<>();
@@ -29,13 +31,6 @@ public class DefaultSchemaProcessor extends AbstractSchemaProcessor {
     }
 
     @Override
-    public void initialize(Schema schema, Class<?> clazz, Map<String, Object> configProperties) {
-        this.schema = schema;
-        this.clazz = clazz;
-        this.configProperties = configProperties;
-    }
-
-    @Override
     public void preProcessor() {
 
     }
@@ -45,15 +40,18 @@ public class DefaultSchemaProcessor extends AbstractSchemaProcessor {
         try {
             NestedSchemaDetails nestedSchemaDetails = generateNestedSchemaDetails(schema, clazz);
 
-            setFieldProperties(nestedSchemaDetails);
+            executeFieldFunction(nestedSchemaDetails, this::setFieldProperties);
+
+            Map<String, RoarGdpr.GdprType> gdprMap = new HashMap<>();
+            setGdprSchemaProperties(nestedSchemaDetails, gdprMap);
 
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
 
-    private void setFieldProperties(NestedSchemaDetails parentNestedSchemaDetails) throws IllegalAccessException, InstantiationException, ClassNotFoundException {
-        for (NestedSchemaDetails child : parentNestedSchemaDetails.getChildren()) {
+    private void executeFieldFunction(NestedSchemaDetails parent, FieldFunction function) {
+        for (NestedSchemaDetails child : parent.getChildren()) {
 
             Field field = child.getField();
 
@@ -62,31 +60,73 @@ public class DefaultSchemaProcessor extends AbstractSchemaProcessor {
                 RoarProcessor roarProcessor = annotation.annotationType().getAnnotation(RoarProcessor.class);
 
                 if (roarProcessor != null) {
+                    function.apply(annotation, roarProcessor, child);
+                }
+            }
 
-                    AvroProcessor avroProcessor = roarProcessor.value().newInstance();
+            executeFieldFunction(child, function);
+        }
+    }
 
-                    avroProcessor.initialize(annotation, field, child.getAllFieldNamesOrdered(), configProperties);
+    private void setGdprSchemaProperties(NestedSchemaDetails parent, Map<String, RoarGdpr.GdprType> gdprMap) {
 
-                    System.out.println(avroProcessor.getFullFieldName());
+        for (NestedSchemaDetails child : parent.getChildren()) {
 
-                    Map<String, Object> propMap = avroProcessor.getFieldProperties();
+            Field field = child.getField();
 
-                    System.out.println("prop map: " + propMap);
+            for (Annotation annotation : field.getAnnotations()) {
 
-                    for (Map.Entry<String, Object> entry : propMap.entrySet()) {
+                RoarProcessor roarProcessor = annotation.annotationType().getAnnotation(RoarProcessor.class);
 
-//                        System.out.println(schema.get + " " + field.getName());
+                if (roarProcessor != null) {
+                    try {
+                        GdprProcessor gdprProcessor = (GdprProcessor) roarProcessor.value().getConstructor().newInstance();
 
-                        child.getParent().getSchema().getField(field.getName()).addProp(entry.getKey(), entry.getValue());
+                        gdprProcessor.initialize((RoarGdpr) annotation, field, child.getAllFieldNamesOrdered(), configProperties);
+
+                        RoarGdpr.GdprType gdprType = gdprProcessor.getGdprType();
+                        String fullFieldName = gdprProcessor.getFullFieldName();
+
+                        gdprMap.compute(fullFieldName, (key, oldValue) -> {
+                            if(oldValue == null){
+                                return gdprType;
+                            } else {
+                                throw new RuntimeException("Gdpr violation!");
+                            }
+                        });
+                        
+                    } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException | InstantiationException e) {
+                        throw new RuntimeException(e);
                     }
                 }
             }
 
-            setFieldProperties(child);
+            setGdprSchemaProperties(child, gdprMap);
         }
     }
 
-    private NestedSchemaDetails generateNestedSchemaDetails(Schema schema, Class clazz) throws IllegalAccessException, InstantiationException, ClassNotFoundException, NoSuchFieldException {
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    private void setFieldProperties(Annotation annotation, RoarProcessor roarProcessor, NestedSchemaDetails child) {
+        try {
+            Field field = child.getField();
+
+            AvroProcessor avroProcessor = roarProcessor.value().getConstructor().newInstance();
+
+            avroProcessor.initialize(annotation, field, child.getAllFieldNamesOrdered(), configProperties);
+
+            Map<String, Object> propMap = avroProcessor.getFieldProperties();
+
+            for (Map.Entry<String, Object> entry : propMap.entrySet()) {
+
+                child.getParent().getSchema().getField(field.getName()).addProp(entry.getKey(), entry.getValue());
+            }
+        } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException | InstantiationException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+
+    private NestedSchemaDetails generateNestedSchemaDetails(Schema schema, Class<?> clazz) throws NoSuchFieldException {
         NestedSchemaDetails nestedSchemaDetails = NestedSchemaDetails.builder()
                 .schema(schema)
                 .clazz(clazz)
@@ -94,31 +134,30 @@ public class DefaultSchemaProcessor extends AbstractSchemaProcessor {
                 .parent(null)
                 .build();
 
-
         return generateNestedSchemaDetails(nestedSchemaDetails);
     }
 
-    private NestedSchemaDetails generateNestedSchemaDetails(NestedSchemaDetails parentNestedSchemaDetails) throws IllegalAccessException, InstantiationException, ClassNotFoundException, NoSuchFieldException {
+    private NestedSchemaDetails generateNestedSchemaDetails(NestedSchemaDetails parentNestedSchemaDetails) throws NoSuchFieldException {
 
         for (Schema.Field avroField : parentNestedSchemaDetails.getSchema().getFields()) {
 
-            String schemaType = avroField.schema().getFullName();
-            Schema schema = avroField.schema();
+            String fieldSchemaType = avroField.schema().getFullName();
+            Schema fieldSchema = avroField.schema();
             String fieldName = avroField.name();
             Field field = getField(parentNestedSchemaDetails.getClazz(), fieldName);
 
-            Class<?> clazz = field.getType();
+            Class<?> fieldClazz = field.getType();
 
             NestedSchemaDetails childNestedSchemaDetails = NestedSchemaDetails.builder()
-                    .schema(schema)
-                    .clazz(clazz)
+                    .schema(fieldSchema)
+                    .clazz(fieldClazz)
                     .field(field)
                     .parent(parentNestedSchemaDetails)
                     .build();
 
             parentNestedSchemaDetails.addChild(childNestedSchemaDetails);
 
-            if (isComplexType(schemaType)) {
+            if (isComplexType(fieldSchemaType)) {
                 generateNestedSchemaDetails(childNestedSchemaDetails);
             }
         }

@@ -20,4 +20,6 @@ public interface AvroProcessor<A extends Annotation> {
     Map<String, Object> getConfigProperties();
 
     String getFullFieldName();
+
+    String getDocumentation();
 }

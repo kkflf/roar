@@ -20,12 +20,10 @@ import java.time.ZonedDateTime;
 @RoarSchema
 public class TestClass extends RoarEvent {
 
-    @RoarGdpr(value = RoarGdpr.GdprType.KEY)
-    @RoarData(documentation = "This is a value for an integer - myIntegerValue")
+    @RoarGdpr(documentation = "This is a value for an integer - myIntegerValue", value = RoarGdpr.GdprType.KEY)
     private int myIntegerValue;
 
-    @RoarData(documentation = "This ia double value - myDoubleValue")
-    @RoarGdpr(value = RoarGdpr.GdprType.PII)
+    @RoarGdpr(documentation = "This ia double value - myDoubleValue", value = RoarGdpr.GdprType.PII)
     private double myDoubleValue;
 
     @RoarData(documentation = "This ia double value - subTestClass")

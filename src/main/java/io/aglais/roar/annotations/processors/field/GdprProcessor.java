@@ -23,9 +23,9 @@ public class GdprProcessor extends AbstractAvroProcessor<RoarGdpr> {
     }
     @Override
     public Map<String, Object> getFieldProperties() {
-        Map<String, Object> map = new HashMap<>();
+        Map<String, Object> map = getCommonFieldProperties();
 
-        getSchemaProperties();
+        map.put("gdpr_type", roarGdpr.value());
 
         return map;
     }
@@ -37,9 +37,11 @@ public class GdprProcessor extends AbstractAvroProcessor<RoarGdpr> {
 
         properties.put(getFullFieldName(), roarGdpr.value());
 
-        System.out.println(properties);
-
         return properties;
+    }
+
+    public RoarGdpr.GdprType getGdprType(){
+        return roarGdpr.value();
     }
 
     @Override
@@ -47,6 +49,7 @@ public class GdprProcessor extends AbstractAvroProcessor<RoarGdpr> {
         return allFieldNamesOrdered;
     }
 
+    @Override
     public void setExtraAnnotations() {
 //        if(roarDate.using() == FactoryEncoder.class){
 //            TypeRuntimeAnnotations
@@ -57,6 +60,11 @@ public class GdprProcessor extends AbstractAvroProcessor<RoarGdpr> {
     @Override
     public Map<String, Object> getConfigProperties() {
         return configProperties;
+    }
+
+    @Override
+    public String getDocumentation() {
+        return roarGdpr.documentation();
     }
 
 }

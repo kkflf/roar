@@ -24,13 +24,7 @@ public class DataProcessor extends AbstractAvroProcessor<RoarData> {
 
     @Override
     public Map<String, Object> getFieldProperties() {
-        Map<String, Object> map = new HashMap<>();
-
-        map.put("doc", roarDate.documentation());
-
-        System.out.println("asdasd " + field.getName());
-
-        return map;
+        return getCommonFieldProperties();
     }
 
     @Override
@@ -43,7 +37,7 @@ public class DataProcessor extends AbstractAvroProcessor<RoarData> {
         return allFieldNamesOrdered;
     }
 
-    public void setExtraAnnotations(){
+    public void setExtraAnnotations() {
 //        if(roarDate.using() == FactoryEncoder.class){
 //            TypeRuntimeAnnotations
 //            field.set();
@@ -53,6 +47,11 @@ public class DataProcessor extends AbstractAvroProcessor<RoarData> {
     @Override
     public Map<String, Object> getConfigProperties() {
         return configProperties;
+    }
+
+    @Override
+    public String getDocumentation() {
+        return roarDate.documentation();
     }
 
 }
