@@ -10,6 +10,16 @@ public abstract class AbstractSchemaProcessor implements SchemaProcessor {
 
     private static final List<String> PRIMITIVE_TYPES = new ArrayList<>();
 
+    protected Schema schema;
+    protected Class<?> clazz;
+    protected Map<String, Object> configProperties;
+
+    public void initialize(Schema schema, Class<?> clazz, Map<String, Object> configProperties){
+        this.schema = schema;
+        this.clazz = clazz;
+        this.configProperties = configProperties;
+    }
+
     static {
         PRIMITIVE_TYPES.add("null");
         PRIMITIVE_TYPES.add("boolean");
@@ -25,7 +35,7 @@ public abstract class AbstractSchemaProcessor implements SchemaProcessor {
         return !PRIMITIVE_TYPES.contains(typeName);
     }
 
-    protected List<String> getPrimitiveTypes(){
+    protected List<String> getPrimitiveTypes() {
         return PRIMITIVE_TYPES;
     }
 

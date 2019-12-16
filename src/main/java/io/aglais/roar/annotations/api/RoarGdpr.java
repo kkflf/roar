@@ -13,7 +13,13 @@ import java.lang.annotation.Target;
 @Target(ElementType.FIELD)
 @RoarProcessor(GdprProcessor.class)
 public @interface RoarGdpr {
-    enum GdprType {KEY, PII, NONE};
+
+    //What object is this RoarGdpr used for.
+    String key();
+
     String documentation() default "";
+
     GdprType value() default GdprType.NONE;
+
+    enum GdprType {KEY, PII, NONE}
 }
