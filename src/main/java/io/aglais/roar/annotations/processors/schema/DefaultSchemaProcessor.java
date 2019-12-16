@@ -10,14 +10,9 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.util.*;
-import java.util.function.BiFunction;
 
 public class DefaultSchemaProcessor extends AbstractSchemaProcessor {
 
-
-    protected DefaultSchemaProcessor(Schema schema, Class<?> clazz, Map<String, Object> configProperties) {
-        super(schema, clazz, configProperties);
-    }
 
     public static Field getField(Class<?> type, String fieldName) throws NoSuchFieldException {
         List<Field> fields = new ArrayList<>();
@@ -42,8 +37,7 @@ public class DefaultSchemaProcessor extends AbstractSchemaProcessor {
 
             executeFieldFunction(nestedSchemaDetails, this::setFieldProperties);
 
-            Map<String, RoarGdpr.GdprType> gdprMap = new HashMap<>();
-            setGdprSchemaProperties(nestedSchemaDetails, gdprMap);
+            Map<String, List<String>> gdprMap = setGdprSchemaProperties(nestedSchemaDetails, null, null);
 
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -68,41 +62,49 @@ public class DefaultSchemaProcessor extends AbstractSchemaProcessor {
         }
     }
 
-    private void setGdprSchemaProperties(NestedSchemaDetails parent, Map<String, RoarGdpr.GdprType> gdprMap) {
+    private Map<String, List<String>> setGdprSchemaProperties(NestedSchemaDetails parent, Map<String, List<String>> gdprMap, String gdprKey) {
+
+        if (gdprMap == null) {
+            gdprMap = new HashMap<>();
+        } else {
+            gdprMap = new HashMap<>(gdprMap);
+        }
+
+        //Number of keys located on parent
+        Map<String, Integer> localGdprKeys = new HashMap<>();
 
         for (NestedSchemaDetails child : parent.getChildren()) {
 
             Field field = child.getField();
 
-            for (Annotation annotation : field.getAnnotations()) {
+            Annotation annotation = field.getAnnotation(RoarGdpr.class);
 
-                RoarProcessor roarProcessor = annotation.annotationType().getAnnotation(RoarProcessor.class);
+                if(annotation != null){
+                    RoarGdpr roarGdpr = (RoarGdpr) annotation;
 
-                if (roarProcessor != null) {
-                    try {
-                        GdprProcessor gdprProcessor = (GdprProcessor) roarProcessor.value().getConstructor().newInstance();
-
-                        gdprProcessor.initialize((RoarGdpr) annotation, field, child.getAllFieldNamesOrdered(), configProperties);
-
-                        RoarGdpr.GdprType gdprType = gdprProcessor.getGdprType();
-                        String fullFieldName = gdprProcessor.getFullFieldName();
-
-                        gdprMap.compute(fullFieldName, (key, oldValue) -> {
+                    if(roarGdpr.value() == RoarGdpr.GdprType.KEY){
+                        localGdprKeys.compute(roarGdpr.key(), (key, oldValue) -> {
                             if(oldValue == null){
-                                return gdprType;
+                                return 1;
                             } else {
-                                throw new RuntimeException("Gdpr violation!");
+                                return oldValue++;
                             }
                         });
-                        
-                    } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException | InstantiationException e) {
-                        throw new RuntimeException(e);
+
                     }
                 }
-            }
 
-            setGdprSchemaProperties(child, gdprMap);
+            setGdprSchemaProperties(child, gdprMap, gdprKey);
         }
+
+        for(Map.Entry<String, Integer> entrySet : localGdprKeys.entrySet()) {
+            if(entrySet.getValue() > 1){
+                throw new RuntimeException("There cannot be more than 1 local key");
+            }
+        }
+
+
+        return gdprMap;
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})

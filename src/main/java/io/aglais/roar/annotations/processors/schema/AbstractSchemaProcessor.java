@@ -10,11 +10,11 @@ public abstract class AbstractSchemaProcessor implements SchemaProcessor {
 
     private static final List<String> PRIMITIVE_TYPES = new ArrayList<>();
 
-    protected final Schema schema;
-    protected final Class<?> clazz;
-    protected final Map<String, Object> configProperties;
+    protected Schema schema;
+    protected Class<?> clazz;
+    protected Map<String, Object> configProperties;
 
-    protected AbstractSchemaProcessor(Schema schema, Class<?> clazz, Map<String, Object> configProperties){
+    public void initialize(Schema schema, Class<?> clazz, Map<String, Object> configProperties){
         this.schema = schema;
         this.clazz = clazz;
         this.configProperties = configProperties;

@@ -12,6 +12,7 @@ import org.apache.kafka.common.errors.SerializationException;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.nio.ByteBuffer;
 import java.util.Map;
 
@@ -40,7 +41,7 @@ public class RoarSerializer extends KafkaAvroSerializer {
     protected Schema getSchema(Object object) {
         try {
             return reflectData.getSchema(object.getClass());
-        } catch (IllegalAccessException | InstantiationException e) {
+        } catch (IllegalAccessException | InstantiationException | NoSuchMethodException | InvocationTargetException e) {
             throw new SerializationException("Error serializing Avro message", e);
         }
     }

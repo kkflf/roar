@@ -9,14 +9,16 @@ import io.confluent.kafka.schemaregistry.client.MockSchemaRegistryClient;
 import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient;
 import io.confluent.kafka.serializers.KafkaAvroDeserializerConfig;
 import org.apache.avro.Schema;
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import java.lang.reflect.InvocationTargetException;
 import java.time.ZonedDateTime;
 import java.util.HashMap;
 import java.util.Properties;
 
-public class RoarDevelopmentTests {
+public class RoarDevelopmentTest {
 
     private static SchemaRegistryClient schemaRegistry;
     private static RoarSerializer roarAvroSerializer;
@@ -37,7 +39,7 @@ public class RoarDevelopmentTests {
     }
 
     @Test
-    public void asd() throws IllegalAccessException, ClassNotFoundException, InstantiationException {
+    public void asd() throws IllegalAccessException, ClassNotFoundException, InstantiationException, NoSuchMethodException, InvocationTargetException {
 
         System.out.println(ZonedDateTime.now());
 
@@ -46,40 +48,72 @@ public class RoarDevelopmentTests {
                 .eventId("event-id-123")
                 .build();
 
-        TestClass2 testClass2 = TestClass2.builder()
-                .testClass2ValueValue("asd")
-                .build();
 
-        SubTestClass subTestClass = SubTestClass
+        Animal pet = Animal
                 .builder()
-                .valueFieldField(12)
-                .testClass2Value(testClass2)
+                .name("Brian")
                 .build();
 
-        TestClass testClass = TestClass
+        CultMember customer = CultMember
                 .builder()
-                .date(ZonedDateTime.now())
-                .myDoubleValue(2.5)
-                .myIntegerValue(11)
-                .subTestClass(subTestClass)
+                .joined(ZonedDateTime.now())
+                .fullName("Donald")
+                .memberId(2)
+                .recruiterId(1)
+                .recruiterFullName("Peter")
+                .pet(pet)
                 .build();
 
-        testClass.setMetadata(metadata);
+        customer.setMetadata(metadata);
 
-        System.out.println(testClass);
+        System.out.println(customer);
 
         RoarReflectData roarReflectData = new RoarReflectData();
-        Schema schema = roarReflectData.getSchema(TestClass.class);
+        Schema schema = roarReflectData.getSchema(CultMember.class);
         System.out.println(schema);
 
-        byte[] serializedData = roarAvroSerializer.serialize("topic", testClass);
+        byte[] serializedData = roarAvroSerializer.serialize("topic", customer);
 
         System.out.println("Serialized!");
 
-        TestClass actual = (TestClass) roarAvroDeserializer.deserialize("topic", serializedData);
+        CultMember actual = (CultMember) roarAvroDeserializer.deserialize("topic", serializedData);
 
         System.out.println(actual);
 
+        Assert.assertTrue(true);
+
+    }
+
+    @Test
+    public void abas() throws IllegalAccessException, ClassNotFoundException, InstantiationException, NoSuchMethodException, InvocationTargetException {
+
+        System.out.println(ZonedDateTime.now());
+
+        Metadata metadata = Metadata
+                .builder()
+                .eventId("event-id-123")
+                .build();
+
+
+        Level1 level1 = new Level1();
+
+        level1.setMetadata(metadata);
+
+        System.out.println(level1);
+
+        RoarReflectData roarReflectData = new RoarReflectData();
+        Schema schema = roarReflectData.getSchema(CultMember.class);
+        System.out.println(schema);
+
+        byte[] serializedData = roarAvroSerializer.serialize("topic", level1);
+
+        System.out.println("Serialized!");
+
+        Level1 actual = (Level1) roarAvroDeserializer.deserialize("topic", serializedData);
+
+        System.out.println(actual);
+
+        Assert.assertEquals(actual, level1);
 
     }
 }
